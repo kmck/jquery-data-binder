@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Binder!</title>
+		<script type="text/javascript" src="jquery-1.8.0.min.js"></script>
+		<script type="text/javascript" src="jquery-data-binder.js"></script>
+		<script type="text/javascript">
+		var user = {
+			name: "Bob",
+			title: "First Subject",
+			description: "This is Bob. He's the first subject.",
+			properties:{
+				agree: 'yes',
+				disagree: 'no'
+			}
+		};
+		var data = {
+			users:[
+				user,
+				{
+					name: "Joe",
+					title: "Subject 2",
+					description: "HE'S GETTING AWAY! STOP HIM!"
+				}
+			]
+		};
+		</script>
+	</head>
+	<body>
+		<h1>Test 1</h1>
+		<p>Try: $('#test').dataBind(data) to bind some fancy data</p>
+		<div id="test">
+			<div data-bindname="users" data-bindproto="true" id="firstuser">
+				<h2 data-bindname="name">Name</h2>
+					<li data-bindname="agree">Ok property!</li>
+				<h3 data-bindname="title">Title</h3>
+				<p data-bindname="description">Description is this</p>
+				<ul data-bindname="properties">
+					<li data-bindname="properties">Bad property!</li>
+					<li data-bindname="agree">Agree</li>
+					<li data-bindname="disagree">Disagree</li>
+				</ul>
+			</div>
+		</div>
+		<p>
+		<hr/>
+		<h1>Test 2</h1>
+		<p>Try: $('#charms').dataBind() to see an array!</p>
+		<ol id="charms" data-bindname="lucky-charms">
+			<li data-bindname="item" id="hearts">Hearts</li>
+			<li data-bindname="item">Stars</li>
+			<li data-bindname="item">Horse Shoes</li>
+			<li data-bindname="item" data-proto="true" id="clovers">Clovers</li>
+			<li data-bindname="item">Blue Moons</li>
+			<li data-bindname="item">Pots of Gold</li>
+			<li data-bindname="item">Rainbows</li>
+			<li data-bindname="item">Red Balloons</li>
+		</ol>
+	</body>
+</html>
