@@ -40,7 +40,7 @@ $.dataBind = function ()
 		element.attr( 'data-bindfield', true );
 
 		return element;
-	}
+	};
 
 	/**
 	 * Sets the data on the selector based on the value data type.
@@ -55,7 +55,19 @@ $.dataBind = function ()
 			plugin.set( selector, data );
 
 		return selector;
-	}
+	};
+
+	plugin.setData2 = function ( selector, data )
+	{
+		if ( $.isPlainObject( data ) )
+			plugin.bind2( selector, data );
+		else if ( $.isArray( data ) )
+			plugin.bindArray( selector, data );
+		else
+			plugin.set( selector, data );
+
+		return selector;
+	};
 
 	/**
 	 * Clones the selector as many times as needed to display the data array.
@@ -79,7 +91,7 @@ $.dataBind = function ()
 		// Clean up and return results
 		prototype.remove();
 		return results;
-	}
+	};
 
 	/**
 	 * Binds data to the selector.
@@ -94,7 +106,52 @@ $.dataBind = function ()
 			plugin.setData( field, value )
 		} );
 		return element;
-	}
+	};
+
+	/**
+	 * Binds data to the selector.
+	 * Usage: $('#selector').dataBind(data) or $.dataBind('#selector', data);
+	 */
+	plugin.bind2 = function ( selector, data, dataPath )
+	{
+		console.log( 'bind2()');
+		//dataPath = $.isArray( dataPath ) ? dataPath.slice( 0 ) : [];
+		var element = $( selector );
+		// If this is a bind target, get the data for it
+		if ( element.is( '[data-bindname][data-bindname!=""]' ) )
+		{
+			if ( $.isArray( dataPath ) )
+			{
+				dataPath = dataPath.slice( 0 );
+				dataPath.push( element.attr( 'data-bindname' ) );
+			}
+			else
+				dataPath = []; // This skips the first one!!
+			console.log( dataPath );
+			var value = plugin.dataLookup( data, dataPath );
+			// If this contained a leaf in the data, set the data and we're done
+			if ( value && !$.isArray( value ) && !$.isPlainObject( value ) )
+			{
+				console.log ( value );
+				plugin.set( element, value );
+				return element;
+			}
+		}
+		element.children().each( function ( i, o ) {
+			plugin.bind2( o, data, dataPath );
+		} );
+		return element;
+	};
+
+	plugin.dataLookup = function ( data, path )
+	{
+		if ( typeof path === 'string' ) path = path.replace( /\[([^\]]+)\]/g,'.$1').replace( /['"]/, '' ).split( '.' );
+		var search = data;
+		$.each( path, function ( i, p ) {
+			return !!( search = search[p] );
+		} );
+		return search;
+	};
 
 	/**
 	 * Extracts data from the selector.
@@ -121,7 +178,7 @@ $.dataBind = function ()
 			}
 		} );
 		return data;
-	}
+	};
 
 	// This is where we decide how we're using dataBind
 	var command, selector, data;
@@ -180,6 +237,11 @@ $.fn.dataBind = function ( data )
 	return arguments.length ? $.dataBind( this, data ) : $.dataBind( this );
 };
 
+$.fn.dataBind2 = function ( data )
+{
+	return arguments.length ? $.dataBind( { selector:this, data:data, command:'bind2' } ) : $.dataBind( this );
+};
+
 /**
  * Find sub-elements matching the selector.
  *
@@ -190,12 +252,33 @@ $.fn.dataBind = function ( data )
  * @param  s selector to use for the search
  * @return the original selector
  */
-$.fn.lazyFind = function ( s ) {
+$.fn.lazyFind = function ( s )
+{
 	var results = $();
 	$( this ).children().each( function ( i, o ) {
 		o = $( o );
 		// Add it, or the first match among children
 		results = results.add( o.is( s ) ? o : o.lazyFind( s ) );
+	} );
+	return results;
+};
+
+/**
+ * Find sub-elements matching the selector.
+ *
+ * This functions lazyFind, but worse, because it grabs all the elements
+ * matching the selector, then filters out the ones that are descendants
+ * of another matching element.
+ */
+$.fn.lazyFind2 = function ( s )
+{
+	var start = $( this );
+	var results = start.find( s );
+	results.each( function ( i, o ) {
+		o = $( o );
+		// If it has a parent that matches, ditch it
+		if ( o.parent().closest( s, start ).length )
+			results = results.not( o );
 	} );
 	return results;
 };
@@ -209,8 +292,39 @@ $.fn.lazyFind = function ( s ) {
  * @param  s selector to use for the search
  * @return the original selector
  */
-$.lazyFind = function ( s ) {
+$.lazyFind = function ( s )
+{
 	return $( document ).lazyFind( s );
+};
+
+$.dataLookup = function ( data, path )
+{
+	if ( typeof path === 'string' ) path = path.replace( /\[([^\]]+)\]/g,'.$1').replace( /['"]/, '' ).split( '.' );
+	var search = data;
+	$.each( path, function ( i, p ) {
+		return !!( search = search[p] );
+	} );
+	return search;
+};
+
+/**
+ * Measure execution time of a function in milliseconds
+ *
+ * You can optionally specify a number of times to run, and it will return an
+ * array containing the average time, total time, and number of loops run
+ *
+ * @param  f function to call
+ * @param  s number of times to run
+ * @return execution time or average time, total time, and loop count
+ */
+$.time = function ( f, l )
+{
+	l = l || 1;
+	var s = new Date().getTime();
+	for ( var i = 0; i < l; i++ ) f.call();
+	var e = new Date().getTime();
+	var t = e - s;
+	return l > 1 ? [t / l, t, l] : t;
 };
 
 })(jQuery);
