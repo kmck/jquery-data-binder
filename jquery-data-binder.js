@@ -45,26 +45,14 @@ $.dataBind = function ()
 	/**
 	 * Sets the data on the selector based on the value data type.
 	 */
-	plugin.setData = function ( selector, data )
+	plugin.setData = function ( selector, data, template )
 	{
 		if ( $.isPlainObject( data ) )
-			plugin.bind( selector, data );
+			plugin.bind( selector, data, template );
 		else if ( $.isArray( data ) )
-			plugin.bindArray( selector, data );
+			plugin.bindArray( selector, data, template );
 		else
-			plugin.set( selector, data );
-
-		return selector;
-	};
-
-	plugin.setData2 = function ( selector, data )
-	{
-		if ( $.isPlainObject( data ) )
-			plugin.bind2( selector, data );
-		else if ( $.isArray( data ) )
-			plugin.bindArray( selector, data );
-		else
-			plugin.set( selector, data );
+			plugin.set( selector, data, template );
 
 		return selector;
 	};
@@ -72,7 +60,7 @@ $.dataBind = function ()
 	/**
 	 * Clones the selector as many times as needed to display the data array.
 	 */
-	plugin.bindArray = function ( selector, data )
+	plugin.bindArray = function ( selector, data, template )
 	{
 		var element = $( selector );
 
@@ -84,7 +72,7 @@ $.dataBind = function ()
 		var results = $();
 		$.each( data, function ( i, value ) {
 			var field = prototype.clone().insertBefore( prototype );
-			plugin.setData( field, value )
+			plugin.setData( field, value, template )
 			results = results.add( field );
 		} );
 
@@ -97,50 +85,50 @@ $.dataBind = function ()
 	 * Binds data to the selector.
 	 * Usage: $('#selector').dataBind(data) or $.dataBind('#selector', data);
 	 */
-	plugin.bind = function ( selector, data )
+	plugin.bind = function ( selector, data, template )
 	{
-		if ( $.isArray( data ) ) return plugin.bindArray( selector, data );
+		// Switch to bindTemplate if the template is given as a string
+		if ( typeof template === 'string' ) return plugin.bindTemplate( selector, data, template );
+		// Massage the data to allow booleans, strings, and numbers
+		switch ( typeof data )
+		{
+			case 'string':
+			case 'number':
+			case 'boolean':
+				data = [data];
+			default: break;
+		}
+		// Arrays are passed to bindArray
+		if ( $.isArray( data ) ) return plugin.bindArray( selector, data, template );
 		var element = $( selector );
+		// Now we can loop through this level of the data tree and start binding
 		$.each( data, function ( key, value ) {
 			var field = element.lazyFind( '[data-bindname="' + key + '"]' );
-			plugin.setData( field, value )
+			// If we don't have a field to bind this data to, attempt to create one from a template
+			if ( !field.length )
+			{
+				if ( $.isPlainObject( template ) && template.hasOwnProperty( key ) )
+				{
+					field = $( template[key] ).attr( 'data-bindname', key );
+					element.append( field );
+				}
+			}
+			plugin.setData( field, value, template );
 		} );
+		// We're done. Now return the modified jQuery object
 		return element;
 	};
 
 	/**
-	 * Binds data to the selector.
-	 * Usage: $('#selector').dataBind(data) or $.dataBind('#selector', data);
+	 * Binds data to a template and puts that bound data into the specified target
 	 */
-	plugin.bind2 = function ( selector, data, dataPath )
+	plugin.bindTemplate = function ( target, data, template )
 	{
-		console.log( 'bind2()');
-		//dataPath = $.isArray( dataPath ) ? dataPath.slice( 0 ) : [];
-		var element = $( selector );
-		// If this is a bind target, get the data for it
-		if ( element.is( '[data-bindname][data-bindname!=""]' ) )
-		{
-			if ( $.isArray( dataPath ) )
-			{
-				dataPath = dataPath.slice( 0 );
-				dataPath.push( element.attr( 'data-bindname' ) );
-			}
-			else
-				dataPath = []; // This skips the first one!!
-			console.log( dataPath );
-			var value = plugin.dataLookup( data, dataPath );
-			// If this contained a leaf in the data, set the data and we're done
-			if ( value && !$.isArray( value ) && !$.isPlainObject( value ) )
-			{
-				console.log ( value );
-				plugin.set( element, value );
-				return element;
-			}
-		}
-		element.children().each( function ( i, o ) {
-			plugin.bind2( o, data, dataPath );
-		} );
-		return element;
+		// Two arguments means that the first is actually the HTML template
+		if ( typeof template === 'undefined' )
+			return plugin.bind( target, data );
+		// Otherwise, we need to check if the root is actually a key on the data
+		return $( target ).empty().append( plugin.bind( template, data ) );
 	};
 
 	plugin.dataLookup = function ( data, path )
@@ -181,11 +169,11 @@ $.dataBind = function ()
 	};
 
 	// This is where we decide how we're using dataBind
-	var command, selector, data;
+	var command, selector, data, template;
 	switch ( arguments.length )
 	{
 		case 0:
-			console.log( 'Try $.dataBind( selector, data )...');
+			console.log( 'Try $.dataBind( selector, data, template )...');
 			return;
 		case 1:
 			command = arguments[0];
@@ -206,7 +194,18 @@ $.dataBind = function ()
 			selector = arguments[0];
 			data = arguments[1];
 			command = 'bind';
-			if ( !$.isPlainObject( data ) )
+			if ( !$.isPlainObject( data ) && !$.isArray( data ) )
+			{
+				command = data;
+				data = {};
+			}
+			break;
+		case 3:
+			selector = arguments[0];
+			data = arguments[1];
+			template = arguments[2];
+			command = 'bind';
+			if ( !$.isPlainObject( data ) && !$.isArray( data ) )
 			{
 				command = data;
 				data = {};
@@ -217,7 +216,7 @@ $.dataBind = function ()
 			data = arguments[1];
 			break;
 	}
-	return plugin[command]( selector, data );
+	return plugin[command]( selector, data, template );
 };
 
 /**
@@ -232,14 +231,18 @@ $.dataBind = function ()
  * @param  data object containing data to bind
  * @return the data pulled from the selector
  */
-$.fn.dataBind = function ( data )
+$.fn.dataBind = function ( data, template )
 {
-	return arguments.length ? $.dataBind( this, data ) : $.dataBind( this );
-};
-
-$.fn.dataBind2 = function ( data )
-{
-	return arguments.length ? $.dataBind( { selector:this, data:data, command:'bind2' } ) : $.dataBind( this );
+	switch ( arguments.length )
+	{
+		case 0:
+			return $.dataBind( this );
+		case 1:
+			return $.dataBind( this, data );
+		case 2:
+		default:
+			return $.dataBind( this, data, template );
+	}
 };
 
 /**
