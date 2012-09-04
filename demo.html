@@ -24,6 +24,39 @@
 				}
 			]
 		};
+		var products = {
+			product: [
+				{
+					name: 'Google',
+					url: 'http://www.google.com/',
+					description: 'A really popular search engine'
+				},
+				{
+					name: 'Bing',
+					url: {
+						href: 'http://www.bing.com/',
+						target: '_blank',
+						title: 'Cool bling',
+						html: 'Bing'
+					},
+					description: 'A well-advertised search engine'
+				},
+				{
+					name: 'Yahoo',
+					url: {
+						href: 'http://www.yahoo.com/',
+						title: 'Cool yahooooo',
+						html: 'Yahoo!'
+					},
+					description: 'A confused search engine'
+				},
+				{
+					name: 'Ask Jeeves',
+					url: 'http://www.ask.com/',
+					description: 'My favorite high school search engine'
+				}
+			]
+		};
 		</script>
 	</head>
 	<body>
@@ -42,7 +75,6 @@
 				</ul>
 			</div>
 		</div>
-		<p>
 		<hr/>
 		<h1>Test 2</h1>
 		<p>Try: $('#charms').dataBind() to see an array!</p>
@@ -56,5 +88,26 @@
 			<li data-bindname="item">Rainbows</li>
 			<li data-bindname="item">Red Balloons</li>
 		</ol>
+		<hr/>
+		<h1>Test 3</h1>
+		<p>Try: $('#products').dataBind( products ) to see special things!</p>
+		<ul id="products" style="width:900px; list-style:none;">
+			<li data-bindname="product[0]" style="float:left; background:#fee; width: 300px; height:400px;">
+				<a href="http://google.com/" data-bindname="url" data-bindexpand>Link</a>
+				<h3><a href="#" data-bindname="url" data-bindnoextract><span data-bindname="name">Product 1</a></h3>
+			</li>
+			<li data-bindname="product[1]" style="float:left; background:#efe; width: 300px; height:200px;">
+				<a href="http://google.com/" data-bindname="url">Link</a>
+				<h3><a href="#" data-bindname="url" data-bindnoextract><span data-bindname="name">Product 2</a></h3>
+			</li>
+			<li data-bindname="product[2]" style="float:right; background:#eef; width: 300px; height:400px;">
+				<a href="http://google.com/" data-bindname="url">Link</a>
+				<h3><a href="#" data-bindname="url" data-bindnoextract><span data-bindname="name">Product 3</a></h3>
+			</li>
+			<li data-bindname="product[3]" style="float:left; background:#ffe; width: 300px; height:200px;">
+				<a href="http://google.com/" data-bindname="url">Link</a>
+				<h3 data-bindname="name"><a href="#" data-bindname="url">Product 4 will lose its link</a></h3>
+			</li>
+		</ul>
 	</body>
 </html>
